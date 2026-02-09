@@ -1,61 +1,27 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-var configurationRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+var configurationRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json", false, true).Build();
 var serviceCollection = new ServiceCollection();
+
+serviceCollection.AddOptions();
 
 serviceCollection.AddPolymorphicOptions<GlobalSettings>(configurationRoot, "GlobalSettings");
 
 var sp = serviceCollection.BuildServiceProvider();
-var o = sp.GetService<IOptions<GlobalSettings>>();
-Console.WriteLine(o.Value.SomethingEnum);
 
-if (o.Value.MainNotificationProvider is EmailProviderConfig e)
-{
-    Console.WriteLine($"EmailProvider {e.SmtpServer}:{e.Port}");
-}
+var globalSettingsMonitor = sp.GetService<IOptionsMonitor<GlobalSettings>>();
 
-[Flags]
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum Providers
+if (globalSettingsMonitor.CurrentValue.MainNotificationProvider is EmailProviderConfig e)
 {
-    None = 0,
-    Email = 1,
-    Sms = 2,
-    Smtp = 4,
-    All = Email | Sms | Smtp
+    Console.WriteLine($"Main provider is EmailProvider {e.SmtpServer}:{e.Port}");
 }
 
-public class GlobalSettings
-{
-    public NotificationProviderConfig MainNotificationProvider { get; set; }
-    
-    public NotificationProviderConfig[] ProvidersList { get; set; }
-    
-    public Dictionary<Providers, NotificationProviderConfig> ProvidersDictionary { get; set; }
-    
-    public Providers SomethingEnum { get; set; }
-}
-        
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
-[JsonDerivedType(typeof(EmailProviderConfig), "Email")]
-[JsonDerivedType(typeof(SmsProviderConfig), "Sms")]
-public abstract class NotificationProviderConfig
-{
-    public string Name { get; set; }
-    // The "Type" property is automatically handled by the attributes
-}
+globalSettingsMonitor.OnChange(s => Console.WriteLine("Configuration changed : " + JsonSerializer.Serialize(s)));
 
-public class EmailProviderConfig : NotificationProviderConfig
-{
-    public string SmtpServer { get; set; }
-    public int Port { get; set; }
-}
+Console.WriteLine("Configuration loaded");
+Console.ReadLine();
 
-public class SmsProviderConfig : NotificationProviderConfig
-{
-    public string ApiKey { get; set; }
-}
 

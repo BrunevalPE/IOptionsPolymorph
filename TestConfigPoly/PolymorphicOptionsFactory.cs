@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 public class PolymorphicOptionsFactory<TOptions> : IOptionsFactory<TOptions> where TOptions : class
@@ -42,7 +41,6 @@ public class PolymorphicOptionsFactory<TOptions> : IOptionsFactory<TOptions> whe
             if (value == null)
                 return null;
 
-            // Try to parse as number or boolean
             if (int.TryParse(value, out var intVal))
                 return intVal;
             if (long.TryParse(value, out var longVal))
@@ -52,17 +50,12 @@ public class PolymorphicOptionsFactory<TOptions> : IOptionsFactory<TOptions> whe
             if (bool.TryParse(value, out var boolVal))
                 return boolVal;
 
-            return value; // Return as string
+            return value;
         }
 
-        // Check if it's an array (keys are numeric)
-
-
-        // Check if it's an array (keys are numeric)
         if (children.All(c => int.TryParse(c.Key, out _)))
             return children.Select(ConvertToObject).ToList();
 
-        // It's an object
         var dict = new Dictionary<string, object?>();
         foreach (var child in children)
         {
@@ -70,23 +63,5 @@ public class PolymorphicOptionsFactory<TOptions> : IOptionsFactory<TOptions> whe
         }
 
         return dict;
-    }
-}
-
-public static class PolymorphicOptionsExtensions
-{
-    public static IServiceCollection AddPolymorphicOptions<TOptions>(
-        this IServiceCollection services,
-        IConfiguration configuration,
-        string sectionName) where TOptions : class
-    {
-        services.AddSingleton<IOptionsFactory<TOptions>>(
-            new PolymorphicOptionsFactory<TOptions>(configuration, sectionName));
-        services.AddSingleton<IOptions<TOptions>>(sp =>
-        {
-            var factory = sp.GetRequiredService<IOptionsFactory<TOptions>>();
-            return Options.Create(factory.Create(Options.DefaultName));
-        });
-        return services;
     }
 }
