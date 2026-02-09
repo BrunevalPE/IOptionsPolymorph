@@ -10,7 +10,13 @@ public static class PolymorphicOptionsExtensions
         string sectionName) where TOptions : class
     {
         services.Configure<TOptions>(o => {});
-        services.AddSingleton<IOptionsFactory<TOptions>>(new PolymorphicOptionsFactory<TOptions>(configuration, sectionName));
+        services.AddTransient<IOptionsFactory<TOptions>>(sp => new PolymorphicOptionsFactory<TOptions>(configuration, sectionName));
+        
+        services.AddSingleton<IOptionsChangeTokenSource<TOptions>>(
+            _ => new ConfigurationChangeTokenSource<TOptions>(
+                null,
+                configuration.GetSection(sectionName)));
+
         return services;
     }
 }

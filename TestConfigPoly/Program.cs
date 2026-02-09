@@ -21,6 +21,18 @@ if (globalSettingsMonitor.CurrentValue.MainNotificationProvider is EmailProvider
 
 globalSettingsMonitor.OnChange(s => Console.WriteLine("Configuration changed : " + JsonSerializer.Serialize(s)));
 
+// to debug live settings updates
+// Task.Run(async() =>
+// {
+//     for (var i = 0; i < 100; i++)
+//     {
+//         Task.Delay(1000).Wait();
+//         var current = sp.GetService<IOptionsSnapshot<GlobalSettings>>();
+//         var current2 = configurationRoot["GlobalSettings:SomethingEnum"];
+//         Console.WriteLine($"Current mode: {globalSettingsMonitor.CurrentValue.SomethingEnum} vs {current.Value.SomethingEnum} vs {current2}");
+//     }
+// });
+
 Console.WriteLine("Configuration loaded");
 Console.ReadLine();
 
