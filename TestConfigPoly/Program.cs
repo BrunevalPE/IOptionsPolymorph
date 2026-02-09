@@ -6,15 +6,37 @@ using Microsoft.Extensions.Options;
 var configurationRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 var serviceCollection = new ServiceCollection();
 
-serviceCollection.AddPolymorphicOptions<NotificationProviderConfig>(configurationRoot, "NotificationProvider");
+serviceCollection.AddPolymorphicOptions<GlobalSettings>(configurationRoot, "GlobalSettings");
 
 var sp = serviceCollection.BuildServiceProvider();
-var o = sp.GetService<IOptions<NotificationProviderConfig>>();
-Console.WriteLine(o.Value.Name);
+var o = sp.GetService<IOptions<GlobalSettings>>();
+Console.WriteLine(o.Value.SomethingEnum);
 
-if (o.Value is EmailProviderConfig e)
+if (o.Value.MainNotificationProvider is EmailProviderConfig e)
 {
     Console.WriteLine($"EmailProvider {e.SmtpServer}:{e.Port}");
+}
+
+[Flags]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum Providers
+{
+    None = 0,
+    Email = 1,
+    Sms = 2,
+    Smtp = 4,
+    All = Email | Sms | Smtp
+}
+
+public class GlobalSettings
+{
+    public NotificationProviderConfig MainNotificationProvider { get; set; }
+    
+    public NotificationProviderConfig[] ProvidersList { get; set; }
+    
+    public Dictionary<Providers, NotificationProviderConfig> ProvidersDictionary { get; set; }
+    
+    public Providers SomethingEnum { get; set; }
 }
         
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
